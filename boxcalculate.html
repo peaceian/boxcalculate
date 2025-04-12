@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carton Box Calculator (cm)</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #e8eff5 0%, #d9e2ec 100%);
+            color: #2d3748;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        h1 {
+            font-size: 2rem;
+            color: #1a3c34;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .container {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            padding: 24px;
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .mode-switch {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+        .mode-btn {
+            background: #e2e8f0;
+            color: #2d3748;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .mode-btn.active {
+            background: #1a3c34;
+            color: #ffffff;
+        }
+        .mode-btn:hover:not(.active) {
+            background: #cbd5e0;
+        }
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            background: #f7fafc;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background: #1a3c34;
+            color: #ffffff;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        th:hover {
+            background: #2a5a4e;
+        }
+        td {
+            background: #ffffff;
+            transition: background 0.2s;
+        }
+        tr:hover td {
+            background: #edf2f7;
+        }
+        .input-section {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            background: #f7fafc;
+            padding: 16px;
+            border-radius: 8px;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: relative;
+        }
+        label {
+            font-size: 0.9rem;
+            color: #4a5568;
+            width: 120px;
+            font-weight: 500;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            font-size: 1rem;
+            background: #ffffff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #1a3c34;
+            box-shadow: 0 0 0 3px rgba(26, 60, 52, 0.1);
+        }
+        input::placeholder {
+            color: #a0aec0;
+        }
+        .tooltip {
+            position: absolute;
+            right: 10px;
+            font-size: 0.8rem;
+            color: #718096;
+            cursor: help;
+        }
+        button.calculate-btn {
+            background: #1a3c34;
+            color: #ffffff;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+        }
+        button.calculate-btn:hover {
+            background: #2a5a4e;
+            transform: translateY(-1px);
+        }
+        button.calculate-btn:active {
+            transform: translateY(0);
+        }
+        #result, #boxResult {
+            margin-top: 12px;
+            font-size: 1.1rem;
+            color: #1a3c34;
+            font-weight: 500;
+            background: #e6fffa;
+            padding: 10px;
+            border-radius: 6px;
+            transition: opacity 0.3s;
+        }
+        .error {
+            color: #e53e3e;
+            background: #fff5f5;
+        }
+        .visualization {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+        canvas {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #ffffff;
+            max-width: 100%;
+        }
+        .hidden {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            th, td {
+                padding: 8px;
+                font-size: 0.8rem;
+            }
+            input, button {
+                font-size: 0.9rem;
+            }
+            .input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            label {
+                width: auto;
+                margin-bottom: 4px;
+            }
+            .tooltip {
+                right: auto;
+                top: -20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Carton Box Calculator (cm)</h1>
+    <div class="container">
+        <div class="mode-switch">
+            <button class="mode-btn active" data-mode="cardboard">Cardboard Size</button>
+            <button class="mode-btn" data-mode="box">Box Dimensions</button>
+        </div>
+
+        <table id="cardboardTable">
+            <thead>
+                <tr>
+                    <th data-sort="boxLength">Box Length (cm)</th>
+                    <th data-sort="boxWidth">Box Width (cm)</th>
+                    <th data-sort="boxHeight">Box Height (cm)</th>
+                    <th data-sort="cardboardLength">Cardboard Length (cm)</th>
+                    <th data-sort="cardboardWidth">Cardboard Width (cm)</th>
+                    <th data-sort="cardboardArea">Cardboard Area (cm²)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr title="Box: 2 × 3 × 4 cm">
+                    <td>2</td>
+                    <td>3</td>
+                    <td>4</td>
+                    <td>10</td>
+                    <td>7</td>
+                    <td>70</td>
+                </tr>
+                <tr title="Box: 5 × 2 × 3 cm">
+                    <td>5</td>
+                    <td>2</td>
+                    <td>3</td>
+                    <td>14</td>
+                    <td>5</td>
+                    <td>70</td>
+                </tr>
+                <tr title="Box: 1 × 1 × 1 cm">
+                    <td>1</td>
+                    <td>1</td>
+                    <td>1</td>
+                    <td>4</td>
+                    <td>2</td>
+                    <td>8</td>
+                </tr>
+                <tr title="Box: 4 × 5 × 2 cm">
+                    <td>4</td>
+                    <td>5</td>
+                    <td>2</td>
+                    <td>18</td>
+                    <td>7</td>
+                    <td>126</td>
+                </tr>
+                <tr title="Box: 3 × 3 × 3 cm">
+                    <td>3</td>
+                    <td>3</td>
+                    <td>3</td>
+                    <td>12</td>
+                    <td>6</td>
+                    <td>72</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <table id="boxTable" class="hidden">
+            <thead>
+                <tr>
+                    <th data-sort="area">Cardboard Area (cm²)</th>
+                    <th data-sort="height">Box Height (cm)</th>
+                    <th data-sort="length">Box Length (cm)</th>
+                    <th data-sort="width">Box Width (cm)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr title="Area: 1000 cm², Height: 20 cm">
+                    <td>1000</td>
+                    <td>20</td>
+                    <td>7.50</td>
+                    <td>5.00</td>
+                </tr>
+                <tr title="Area: 2000 cm², Height: 20 cm">
+                    <td>2000</td>
+                    <td>20</td>
+                    <td>15.00</td>
+                    <td>10.00</td>
+                </tr>
+                <tr title="Area: 3000 cm², Height: 20 cm">
+                    <td>3000</td>
+                    <td>20</td>
+                    <td>22.50</td>
+                    <td>15.00</td>
+                </tr>
+                <tr title="Area: 1500 cm², Height: 15 cm">
+                    <td>1500</td>
+                    <td>15</td>
+                    <td>12.00</td>
+                    <td>8.00</td>
+                </tr>
+                <tr title="Area: 2500 cm², Height: 25 cm">
+                    <td>2500</td>
+                    <td>25</td>
+                    <td>15.00</td>
+                    <td>10.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="input-section" id="cardboardInput">
+            <h2 style="font-size: 1.3rem; margin: 0 0 12px;">Calculate Cardboard Size</h2>
+            <div class="input-group">
+                <label for="length">Box Length:</label>
+                <input type="number" id="length" placeholder="Enter box length (cm)" step="any" min="0">
+                <span class="tooltip" title="Length of the box in cm">ℹ️</span>
+            </div>
+            <div class="input-group">
+                <label for="width">Box Width:</label>
+                <input type="number" id="width" placeholder="Enter box width (cm)" step="any" min="0">
+                <span class="tooltip" title="Width of the box in cm">ℹ️</span>
+            </div>
+            <div class="input-group">
+                <label for="height">Box Height:</label>
+                <input type="number" id="height" placeholder="Enter box height (cm)" step="any" min="0">
+                <span class="tooltip" title="Height of the box in cm">ℹ️</span>
+            </div>
+            <button class="calculate-btn" onclick="calculateCardboardSize()">Calculate</button>
+            <div id="result">Result: </div>
+        </div>
+
+        <div class="input-section hidden" id="boxInput">
+            <h2 style="font-size: 1.3rem; margin: 0 0 12px;">Calculate Box Dimensions</h2>
+            <div class="input-group">
+                <label for="area">Cardboard Area:</label>
+                <input type="number" id="area" placeholder="Enter area (cm²)" step="any" min="0">
+                <span class="tooltip" title="Total cardboard area needed">ℹ️</span>
+            </div>
+            <div class="input-group">
+                <label for="boxHeight">Box Height:</label>
+                <input type="number" id="boxHeight" placeholder="Enter height (cm, default 20)" step="any" min="0">
+                <span class="tooltip" title="Box height, defaults to 20 cm if blank">ℹ️</span>
+            </div>
+            <button class="calculate-btn" onclick="calculateBoxDimensions()">Calculate</button>
+            <div id="boxResult">Result: </div>
+        </div>
+
+        <div class="visualization">
+            <div>
+                <h3 style="font-size: 1.1rem; margin: 0 0 8px;">Box Preview</h3>
+                <canvas id="boxCanvas" width="300" height="200"></canvas>
+            </div>
+            <div>
+                <h3 style="font-size: 1.1rem; margin: 0 0 8px;">Cardboard Layout</h3>
+                <canvas id="cardboardCanvas" width="300" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Mode switching
+        const modeButtons = document.querySelectorAll('.mode-btn');
+        const cardboardTable = document.getElementById('cardboardTable');
+        const boxTable = document.getElementById('boxTable');
+        const cardboardInput = document.getElementById('cardboardInput');
+        const boxInput = document.getElementById('boxInput');
+        const resultDiv = document.getElementById('result');
+        const boxResultDiv = document.getElementById('boxResult');
+
+        modeButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                modeButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                const mode = btn.dataset.mode;
+                if (mode === 'cardboard') {
+                    cardboardTable.classList.remove('hidden');
+                    boxTable.classList.add('hidden');
+                    cardboardInput.classList.remove('hidden');
+                    boxInput.classList.add('hidden');
+                } else {
+                    cardboardTable.classList.add('hidden');
+                    boxTable.classList.remove('hidden');
+                    cardboardInput.classList.add('hidden');
+                    boxInput.classList.remove('hidden');
+                }
+
+                clearCanvases();
+                resultDiv.textContent = 'Result: ';
+                resultDiv.style.opacity = 1;
+                boxResultDiv.textContent = 'Result: ';
+                boxResultDiv.style.opacity = 1;
+            });
+        });
+
+        function calculateCardboardSize() {
+            const length = parseFloat(document.getElementById('length').value);
+            const width = parseFloat(document.getElementById('width').value);
+            const height = parseFloat(document.getElementById('height').value);
+
+            resultDiv.classList.remove('error');
+            resultDiv.style.opacity = 0;
+
+            if (isNaN(length) || isNaN(width) || isNaN(height)) {
+                resultDiv.classList.add('error');
+                resultDiv.textContent = "Result: Please enter valid numbers for all fields.";
+                resultDiv.style.opacity = 1;
+                clearCanvases();
+                return;
+            }
+            if (length <= 0 || width <= 0 || height <= 0) {
+                resultDiv.classList.add('error');
+                resultDiv.textContent = "Result: Values must be greater than zero.";
+                resultDiv.style.opacity = 1;
+                clearCanvases();
+                return;
+            }
+
+            const cardboardLength = 2 * (length + width);
+            const cardboardWidth = height + width;
+            const cardboardArea = cardboardLength * cardboardWidth;
+
+            resultDiv.textContent = `Result: Cardboard Size = ${cardboardLength.toFixed(2)} cm × ${cardboardWidth.toFixed(2)} cm = ${cardboardArea.toFixed(2)} cm²`;
+            resultDiv.style.opacity = 1;
+
+            drawBox(length, width, height);
+            drawCardboard(length, width, height);
+        }
+
+        function calculateBoxDimensions() {
+            const area = parseFloat(document.getElementById('area').value);
+            let height = parseFloat(document.getElementById('boxHeight').value);
+
+            boxResultDiv.classList.remove('error');
+            boxResultDiv.style.opacity = 0;
+
+            if (isNaN(area) || area <= 0) {
+                boxResultDiv.classList.add('error');
+                boxResultDiv.textContent = "Result: Please enter a valid positive area.";
+                boxResultDiv.style.opacity = 1;
+                clearCanvases();
+                return;
+            }
+
+            if (isNaN(height) || height <= 0) {
+                height = 20;
+            }
+
+            const k = 1.5;
+            const a = 5;
+            const b = 5 * height;
+            const c = -area;
+            const discriminant = b * b - 4 * a * c;
+
+            if (discriminant < 0) {
+                boxResultDiv.classList.add('error');
+                boxResultDiv.textContent = "Result: No valid dimensions for this area and height.";
+                boxResultDiv.style.opacity = 1;
+                clearCanvases();
+                return;
+            }
+
+            const width = (-b + Math.sqrt(discriminant)) / (2 * a);
+            const length = k * width;
+
+            if (width <= 0 || length <= 0) {
+                boxResultDiv.classList.add('error');
+                boxResultDiv.textContent = "Result: No valid positive dimensions.";
+                boxResultDiv.style.opacity = 1;
+                clearCanvases();
+                return;
+            }
+
+            boxResultDiv.textContent = `Result: Box Dimensions = ${length.toFixed(2)} cm (L) × ${width.toFixed(2)} cm (W) × ${height.toFixed(2)} cm (H)`;
+            boxResultDiv.style.opacity = 1;
+
+            drawBox(length, width, height);
+            drawCardboard(length, width, height);
+        }
+
+        function drawBox(length, width, height) {
+            const canvas = document.getElementById('boxCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const scale = Math.min(100 / length, 100 / width, 100 / height, 4);
+            const l = length * scale;
+            const w = width * scale;
+            const h = height * scale;
+
+            const offsetX = 100, offsetY = 80;
+            ctx.strokeStyle = '#1a3c34';
+            ctx.lineWidth = 2;
+            ctx.fillStyle = 'rgba(26, 60, 52, 0.1)';
+
+            ctx.beginPath();
+            ctx.moveTo(offsetX, offsetY);
+            ctx.lineTo(offsetX + l, offsetY);
+            ctx.lineTo(offsetX + l, offsetY + h);
+            ctx.lineTo(offsetX, offsetY + h);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(offsetX, offsetY);
+            ctx.lineTo(offsetX + w * 0.7, offsetY - w * 0.7);
+            ctx.lineTo(offsetX + l + w * 0.7, offsetY - w * 0.7);
+            ctx.lineTo(offsetX + l, offsetY);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(offsetX + l, offsetY);
+            ctx.lineTo(offsetX + l + w * 0.7, offsetY - w * 0.7);
+            ctx.lineTo(offsetX + l + w * 0.7, offsetY - w * 0.7 + h);
+            ctx.lineTo(offsetX + l, offsetY + h);
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#2d3748';
+            ctx.font = '12px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${length.toFixed(1)} cm`, offsetX + l / 2, offsetY + h + 20);
+            ctx.fillText(`${width.toFixed(1)} cm`, offsetX + l + w * 0.7 + 20, offsetY + h / 2);
+            ctx.fillText(`${height.toFixed(1)} cm`, offsetX - 20, offsetY + h / 2);
+        }
+
+        function drawCardboard(length, width, height) {
+            const canvas = document.getElementById('cardboardCanvas');
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cardboardLength = 2 * (length + width);
+            const cardboardWidth = height + width;
+
+            const scale = Math.min(250 / cardboardLength, 150 / cardboardWidth, 4);
+            const cl = cardboardLength * scale;
+            const cw = cardboardWidth * scale;
+
+            const offsetX = (canvas.width - cl) / 2;
+            const offsetY = (canvas.height - cw) / 2;
+            ctx.strokeStyle = '#1a3c34';
+            ctx.lineWidth = 2;
+            ctx.fillStyle = 'rgba(229, 231, 235, 0.5)';
+            ctx.beginPath();
+            ctx.rect(offsetX, offsetY, cl, cw);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#2d3748';
+            ctx.font = '12px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${cardboardLength.toFixed(1)} cm`, offsetX + cl / 2, offsetY - 10);
+            ctx.fillText(`${cardboardWidth.toFixed(1)} cm`, offsetX + cl + 20, offsetY + cw / 2);
+        }
+
+        function clearCanvases() {
+            const boxCanvas = document.getElementById('boxCanvas');
+            const cardboardCanvas = document.getElementById('cardboardCanvas');
+            boxCanvas.getContext('2d').clearRect(0, 0, boxCanvas.width, boxCanvas.height);
+            cardboardCanvas.getContext('2d').clearRect(0, 0, cardboardCanvas.width, cardboardCanvas.height);
+        }
+
+        // Table sorting
+        function addSortListeners(table) {
+            table.querySelectorAll('th').forEach(th => {
+                th.addEventListener('click', () => {
+                    const tbody = table.querySelector('tbody');
+                    const index = Array.from(th.parentNode.children).indexOf(th);
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+
+                    const ascending = !th.classList.contains('asc');
+                    rows.sort((a, b) => {
+                        const aVal = parseFloat(a.children[index].textContent);
+                        const bVal = parseFloat(b.children[index].textContent);
+                        return ascending ? aVal - bVal : bVal - aVal;
+                    });
+
+                    th.classList.toggle('asc', ascending);
+                    th.classList.toggle('desc', !ascending);
+                    tbody.innerHTML = '';
+                    rows.forEach(row => tbody.appendChild(row));
+                });
+            });
+        }
+
+        addSortListeners(cardboardTable);
+        addSortListeners(boxTable);
+    </script>
+</body>
+</html>
